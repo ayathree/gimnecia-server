@@ -26,7 +26,8 @@ async function run() {
   try {
 
     const userCollection = client.db('fitDB').collection('users')
-
+    const trainerCollection = client.db('fitDB').collection('trainers')
+// user
     app.get('/users',  async(req,res)=>{
      
       const result = await userCollection.find().toArray();
@@ -44,6 +45,23 @@ async function run() {
       const result = await userCollection.insertOne(user);
       res.send(result)
     })
+
+    // trainers
+    app.get('/trainers', async(req,res)=>{
+      const result = await trainerCollection.find().toArray();
+      res.send(result)
+  })
+
+  app.post('/trainers', async(req,res)=>{
+    const item = req.body;
+    const query = {email: item.email}
+      const existingItem = await trainerCollection.findOne(query);
+      if(existingItem){
+        return res.send({message: 'user already requested', insertedId: null})
+      }
+    const result = await trainerCollection.insertOne(item)
+    res.send(result)
+  })
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
