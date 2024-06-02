@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -60,6 +60,12 @@ async function run() {
         return res.send({message: 'user already requested', insertedId: null})
       }
     const result = await trainerCollection.insertOne(item)
+    res.send(result)
+  })
+  app.get('/trainers/:id',async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const result = await trainerCollection.findOne(query)
     res.send(result)
   })
     // Connect the client to the server	(optional starting in v4.7)
