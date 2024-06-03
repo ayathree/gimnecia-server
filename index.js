@@ -94,6 +94,12 @@ async function run() {
     const result = await bookedTrainerCollection.insertOne(booked);
     res.send(result)
   })
+  // app.get('/booked/:id',async(req,res)=>{
+  //   const id = req.params.id;
+  //   const query = {_id: new ObjectId(id)}
+  //   const result = await bookedTrainerCollection.findOne(query)
+  //   res.send(result)
+  // })
 
 
 
