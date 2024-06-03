@@ -68,6 +68,15 @@ async function run() {
     const result = await trainerCollection.findOne(query)
     res.send(result)
   })
+  // trainers by time slot
+  app.get('/trainee/:availableTime',async(req,res)=>{
+    const availableTime = req.params.availableTime;
+    
+    const query = { availableTime: availableTime}
+    const result = await trainerCollection.findOne(query)
+    res.send(result)
+  })
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
