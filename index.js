@@ -27,6 +27,7 @@ async function run() {
 
     const userCollection = client.db('fitDB').collection('users')
     const trainerCollection = client.db('fitDB').collection('trainers')
+    const bookedTrainerCollection = client.db('fitDB').collection('bookedTrainers')
 // user
     app.get('/users',  async(req,res)=>{
      
@@ -76,6 +77,25 @@ async function run() {
     const result = await trainerCollection.findOne(query)
     res.send(result)
   })
+  // bookedTrainer
+  app.get('/booked',  async(req,res)=>{
+     
+    const result = await bookedTrainerCollection.find().toArray();
+    res.send(result) 
+  })
+  app.post('/booked', async(req,res)=>{
+    const booked= req.body;
+    // const query = {name: booked.name}
+    //   const existingUser = await bookedTrainerCollection.findOne(query);
+    //   if(existingUser){
+    //     return res.send({message: 'user already exist', insertedId: null})
+    //   }
+    
+    const result = await bookedTrainerCollection.insertOne(booked);
+    res.send(result)
+  })
+
+
 
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
