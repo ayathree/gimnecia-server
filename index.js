@@ -94,12 +94,20 @@ async function run() {
     const result = await bookedTrainerCollection.insertOne(booked);
     res.send(result)
   })
-  // app.get('/booked/:id',async(req,res)=>{
-  //   const id = req.params.id;
-  //   const query = {_id: new ObjectId(id)}
-  //   const result = await bookedTrainerCollection.findOne(query)
-  //   res.send(result)
-  // })
+  app.get('/booked/:email', async (req, res) => {
+    const userEmail = req.params.email;
+    const query = { userEmail: userEmail };
+    const result = await bookedTrainerCollection.find(query).toArray(); // Using find() instead of findOne()
+    res.send(result);
+  });
+  // get booked details by id
+  app.get('/bookeee/:id',async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const result = await bookedTrainerCollection.findOne(query)
+    res.send(result)
+  })
+  
 
 
 
