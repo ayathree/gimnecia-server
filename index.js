@@ -28,6 +28,7 @@ async function run() {
 
     const userCollection = client.db('fitDB').collection('users')
     const trainerCollection = client.db('fitDB').collection('trainers')
+    const confirmedTrainerCollection =client.db('fitDB').collection('confirmedTrainers') 
     const bookedTrainerCollection = client.db('fitDB').collection('bookedTrainers')
 
     // jwt api
@@ -130,12 +131,40 @@ async function run() {
     const result = await trainerCollection.insertOne(item)
     res.send(result)
   })
-  app.get('/trainers/:id',async(req,res)=>{
+  // app.get('/trainers/:id',async(req,res)=>{
+  //   const id = req.params.id;
+  //   const query = {_id: new ObjectId(id)}
+  //   const result = await trainerCollection.findOne(query)
+  //   res.send(result)
+  // })
+  // confirmed trainer
+  app.get('/trainers/:id', async (req, res) => {
     const id = req.params.id;
-    const query = {_id: new ObjectId(id)}
-    const result = await trainerCollection.findOne(query)
+    const query = { _id: new ObjectId(id) };
+    
+    try {
+        const trainer = await trainerCollection.findOne(query);
+        
+        if (!trainer) {
+            return res.status(404).json({ message: 'Trainer not found' });
+        }
+        
+        await trainerCollection.updateOne(query, { $set: { status: 'Trainer' } });
+        await confirmedTrainerCollection.insertOne({ ...trainer, status: 'Trainer' });
+         await trainerCollection.deleteOne({ _id: new ObjectId(id) });
+        
+        res.json(trainer);
+    } catch (error) {
+        console.error('Error confirming trainer:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+  // get confirmed trainer
+  app.get('/confirmedTrainer',  async(req,res)=>{
+    const result = await confirmedTrainerCollection.find().toArray();
     res.send(result)
-  })
+})
+
   // trainers by time slot
   app.get('/trainee/:availableTime',async(req,res)=>{
     const availableTime = req.params.availableTime;
