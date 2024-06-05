@@ -131,14 +131,14 @@ async function run() {
     const result = await trainerCollection.insertOne(item)
     res.send(result)
   })
-  // app.get('/trainers/:id',async(req,res)=>{
-  //   const id = req.params.id;
-  //   const query = {_id: new ObjectId(id)}
-  //   const result = await trainerCollection.findOne(query)
-  //   res.send(result)
-  // })
+  app.get('/trainers/:id',async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const result = await trainerCollection.findOne(query)
+    res.send(result)
+  })
   // confirmed trainer
-  app.get('/trainers/:id', async (req, res) => {
+  app.patch('/trainers/confirm/:id', async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
     
@@ -151,7 +151,9 @@ async function run() {
         
         await trainerCollection.updateOne(query, { $set: { status: 'Trainer' } });
         await confirmedTrainerCollection.insertOne({ ...trainer, status: 'Trainer' });
-         await trainerCollection.deleteOne({ _id: new ObjectId(id) });
+       
+          await trainerCollection.deleteOne({ _id: new ObjectId(id) });
+       
         
         res.json(trainer);
     } catch (error) {
@@ -164,6 +166,18 @@ async function run() {
     const result = await confirmedTrainerCollection.find().toArray();
     res.send(result)
 })
+app.get('/confirmedTrainer/:id',async(req,res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)}
+  const result = await confirmedTrainerCollection.findOne(query)
+  res.send(result)
+})
+app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
+  const id = req.params.id;
+  const query = {_id: new ObjectId(id)}
+  const result = await confirmedTrainerCollection.deleteOne(query);
+  res.send(result)
+    })
 
   // trainers by time slot
   app.get('/trainee/:availableTime',async(req,res)=>{
