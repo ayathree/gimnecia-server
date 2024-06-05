@@ -115,7 +115,7 @@ async function run() {
     })
 
     // trainers
-    app.get('/trainers', async(req,res)=>{
+    app.get('/trainers', verifyToken,verifyAdmin, async(req,res)=>{
       const result = await trainerCollection.find().toArray();
       res.send(result)
   })
