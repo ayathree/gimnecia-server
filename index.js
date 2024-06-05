@@ -68,6 +68,18 @@ async function run() {
       }
       next()
     }
+    // verify trainer
+    const verifyTrainer = async (req,res,next)=>{
+      const email = req.decoded.email;
+      const query = {email: email};
+      const trainer = await confirmedTrainerCollection.findOne(query);
+      const isTrainer = trainer?.status==='Trainer';
+      if(!isTrainer){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      next()
+    }
+
 // user
     app.get('/users', verifyToken,verifyAdmin,  async(req,res)=>{
      
@@ -166,6 +178,23 @@ async function run() {
     const result = await confirmedTrainerCollection.find().toArray();
     res.send(result)
 })
+app.get('/confirmedTrainer/:email', verifyToken,  async(req,res)=>{
+  const email = req.params.email;
+  // if (email !== req.decoded.email) {
+  //   return res.status(403).send({message: 'unauthorized access'})
+    
+  // }
+  const query = {email: email};
+  const userTrainer = await confirmedTrainerCollection.findOne(query);
+  let trainer = false;
+  if (userTrainer) {
+    trainer = userTrainer?.status=== 'Trainer';
+    
+  }
+  res.send({ trainer})
+
+})
+
 app.get('/confirmedTrainer/:id',async(req,res)=>{
   const id = req.params.id;
   const query = {_id: new ObjectId(id)}
