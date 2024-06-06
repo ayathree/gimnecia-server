@@ -233,13 +233,25 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     })
 
   // trainers by time slot
-  app.get('/trainee/:availableTime',async(req,res)=>{
-    const availableTime = req.params.availableTime;
+  app.get('/trainee/:times', async (req, res) => {
+    const availableTime = req.params.times;
     
-    const query = { availableTime: availableTime}
-    const result = await trainerCollection.findOne(query)
-    res.send(result)
-  })
+    
+    const query = { 'timeslot.times': availableTime };
+    
+    try {
+        const result = await confirmedTrainerCollection.findOne(query);
+        if (result) {
+            res.send(result);
+        } else {
+            res.status(404).send({ message: 'No trainer found with the specified available time' });
+        }
+    } catch (error) {
+        console.error('Error finding trainer:', error);
+        res.status(500).send({ message: 'Internal server error' });
+    }
+});
+
   // bookedTrainer
   app.get('/booked',  async(req,res)=>{
      
