@@ -68,17 +68,6 @@ async function run() {
       }
       next()
     }
-    // verify trainer
-    const verifyTrainer = async (req,res,next)=>{
-      const email = req.params.email;
-      const query = {email: email};
-      const trainer = await confirmedTrainerCollection.findOne(query);
-      const isTrainer = trainer?.status==='Trainer';
-      if(!isTrainer){
-        return res.status(403).send({message: 'forbidden access'})
-      }
-      next()
-    }
 
 // user
     app.get('/users', verifyToken,verifyAdmin,  async(req,res)=>{
@@ -217,15 +206,11 @@ app.get('/users/trainer/:email', verifyToken, async (req, res) => {
     const query = { email: email };
     
     const user = await userCollection.findOne(query);
-    // const trainee = await confirmedTrainerCollection.findOne(query);
     let trainer = false;
 
     if (user) {
       trainer = user?.role === 'trainer';
      }
-    //  else if (trainee) {
-    //   member = trainee?.status !== 'Trainer';
-    // }
 
     res.send({ trainer });
   } catch (error) {
@@ -275,7 +260,7 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
   app.get('/booked/:email', async (req, res) => {
     const userEmail = req.params.email;
     const query = { userEmail: userEmail };
-    const result = await bookedTrainerCollection.find(query).toArray(); // Using find() instead of findOne()
+    const result = await bookedTrainerCollection.find(query).toArray(); 
     res.send(result);
   });
   // get booked details by id
@@ -295,18 +280,13 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
         return res.status(403).send({ message: 'unauthorized access' });
       }
   
-      const query = { email: email };
-      
+      const query = { email: email };  
       const user = await userCollection.findOne(query);
-      // const trainee = await confirmedTrainerCollection.findOne(query);
       let member = false;
   
       if (user) {
         member = user?.role === 'member';
        }
-      //  else if (trainee) {
-      //   member = trainee?.status !== 'Trainer';
-      // }
   
       res.send({ member });
     } catch (error) {
