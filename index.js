@@ -70,7 +70,7 @@ async function run() {
     }
     // verify trainer
     const verifyTrainer = async (req,res,next)=>{
-      const email = req.decoded.email;
+      const email = req.params.email;
       const query = {email: email};
       const trainer = await confirmedTrainerCollection.findOne(query);
       const isTrainer = trainer?.status==='Trainer';
@@ -87,17 +87,24 @@ async function run() {
       res.send(result) 
     })
 
-    app.post('/users', async(req,res)=>{
-      const user= req.body;
-      // dont let a user insert in db if it already exist
-      const query = {email: user.email}
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+    
+      // Don't let a user insert in db if it already exists
+      const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
-      if(existingUser){
-        return res.send({message: 'user already exist', insertedId: null})
+    
+      if (existingUser) {
+        return res.send({ message: 'User already exists', insertedId: null });
       }
+    
+      // Set role to 'member'
+      user.role = 'member';
+    
       const result = await userCollection.insertOne(user);
-      res.send(result)
-    })
+      res.send(result);
+    });
+    
     // admin
     app.patch('/users/admin/:id', async (req,res)=>{
       const id = req.params.id;
@@ -153,21 +160,41 @@ async function run() {
   app.patch('/trainers/confirm/:id', async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
-    
+
     try {
         const trainer = await trainerCollection.findOne(query);
-        
+
         if (!trainer) {
             return res.status(404).json({ message: 'Trainer not found' });
         }
-        
-        await trainerCollection.updateOne(query, { $set: { status: 'Trainer' } });
-        await confirmedTrainerCollection.insertOne({ ...trainer, status: 'Trainer' });
-       
-          await trainerCollection.deleteOne({ _id: new ObjectId(id) });
-       
-        
-        res.json(trainer);
+
+        console.log('Trainer found:', trainer);
+
+        // Update trainer status in trainerCollection
+        const updateTrainerResult = await trainerCollection.updateOne(query, { $set: { status: 'Trainer' } });
+        console.log('updateTrainerResult:', updateTrainerResult);
+
+        // Insert trainer into confirmedTrainerCollection with updated status
+        const insertResult = await confirmedTrainerCollection.insertOne({ ...trainer, status: 'Trainer' });
+        console.log('insertResult:', insertResult);
+
+        // Update user role in userCollection
+        const updateUserResult = await userCollection.updateOne({ email: trainer.email }, { $set: { role: 'trainer' } });
+        console.log('updateUserResult:', updateUserResult);
+
+        // Verify the role update
+        const updatedUser = await userCollection.findOne({ email: trainer.email });
+        console.log('updatedUser:', updatedUser);
+
+        if (!updateUserResult.modifiedCount) {
+            return res.status(400).json({ message: 'Failed to update user role' });
+        }
+
+        // Delete trainer from trainerCollection
+        const deleteResult = await trainerCollection.deleteOne(query);
+        console.log('deleteResult:', deleteResult);
+
+        res.json({ message: 'Trainer confirmed and moved', trainer });
     } catch (error) {
         console.error('Error confirming trainer:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -178,22 +205,34 @@ async function run() {
     const result = await confirmedTrainerCollection.find().toArray();
     res.send(result)
 })
-app.get('/confirmedTrainer/:email', verifyToken,  async(req,res)=>{
-  const email = req.params.email;
-  // if (email !== req.decoded.email) {
-  //   return res.status(403).send({message: 'unauthorized access'})
-    
-  // }
-  const query = {email: email};
-  const userTrainer = await confirmedTrainerCollection.findOne(query);
-  let trainer = false;
-  if (userTrainer) {
-    trainer = userTrainer?.status=== 'Trainer';
-    
-  }
-  res.send({ trainer})
+app.get('/users/trainer/:email', verifyToken, async (req, res) => {
+  try {
+    const email = req.params.email;
 
-})
+    // If the email in the request does not match the email in the token, return an unauthorized access message
+    if (email !== req.decoded.email) {
+      return res.status(403).send({ message: 'unauthorized access' });
+    }
+
+    const query = { email: email };
+    
+    const user = await userCollection.findOne(query);
+    // const trainee = await confirmedTrainerCollection.findOne(query);
+    let trainer = false;
+
+    if (user) {
+      trainer = user?.role === 'trainer';
+     }
+    //  else if (trainee) {
+    //   member = trainee?.status !== 'Trainer';
+    // }
+
+    res.send({ trainer });
+  } catch (error) {
+    console.error('Error fetching member information:', error);
+    res.status(500).send({ message: 'Internal server error' });
+  }
+});
 
 app.get('/confirmedTrainer/:id',async(req,res)=>{
   const id = req.params.id;
@@ -246,6 +285,36 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     const result = await bookedTrainerCollection.findOne(query)
     res.send(result)
   })
+  // member api
+  app.get('/users/member/:email', verifyToken, async (req, res) => {
+    try {
+      const email = req.params.email;
+  
+      // If the email in the request does not match the email in the token, return an unauthorized access message
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'unauthorized access' });
+      }
+  
+      const query = { email: email };
+      
+      const user = await userCollection.findOne(query);
+      // const trainee = await confirmedTrainerCollection.findOne(query);
+      let member = false;
+  
+      if (user) {
+        member = user?.role === 'member';
+       }
+      //  else if (trainee) {
+      //   member = trainee?.status !== 'Trainer';
+      // }
+  
+      res.send({ member });
+    } catch (error) {
+      console.error('Error fetching member information:', error);
+      res.status(500).send({ message: 'Internal server error' });
+    }
+  });
+  
   
 
 
