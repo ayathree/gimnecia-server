@@ -32,6 +32,7 @@ async function run() {
     const confirmedTrainerCollection =client.db('fitDB').collection('confirmedTrainers') 
     const bookedTrainerCollection = client.db('fitDB').collection('bookedTrainers')
     const paymentCollection = client.db('fitDB').collection('payments')
+    const newsLetterCollection = client.db('fitDB').collection('news')
 
     // jwt api
     app.post('/jwt', async(req,res)=>{
@@ -342,6 +343,56 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     res.send({paymentResult, updateResult})
 
 
+  })
+  app.get('/payments', verifyToken,verifyAdmin,  async(req,res)=>{
+     
+    const result = await paymentCollection.find().toArray();
+    res.send(result) 
+  })
+
+  // newsletter
+  app.post('/news', async (req, res) => {
+    const news = req.body;
+  
+    // Don't let a user insert in db if it already exists
+    const query = { email: news.email };
+    const existingUser = await newsLetterCollection.findOne(query);
+  
+    if (existingUser) {
+      return res.send({ message: 'User already exists', insertedId: null });
+    }
+  
+  
+    const result = await newsLetterCollection.insertOne(news);
+    res.send(result);
+  });
+  app.get('/news', verifyToken,verifyAdmin,  async(req,res)=>{
+     
+    const result = await newsLetterCollection.find().toArray();
+    res.send(result) 
+  })
+  // states or analytics
+  app.get('/admin-stats',verifyToken, verifyAdmin, async(req,res)=>{
+    const newsUser = await newsLetterCollection.estimatedDocumentCount();
+    
+    const paymentUser = await paymentCollection.estimatedDocumentCount();
+    // revenue
+    const result = await paymentCollection.aggregate([
+      {
+        $group:{
+          _id: null,
+          totalRevenue:{
+            $sum:'$price'
+          }
+        }
+
+      }
+    ]).toArray();
+
+    const revenue = result.length > 0?result[0].totalRevenue : 0
+    res.send({
+       newsUser,paymentUser, revenue
+    })
   })
   
   
