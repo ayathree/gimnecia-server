@@ -3,6 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
+const stripe= require('stripe')(process.env.STRIPE_SECRET_KEY)
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -30,6 +31,7 @@ async function run() {
     const trainerCollection = client.db('fitDB').collection('trainers')
     const confirmedTrainerCollection =client.db('fitDB').collection('confirmedTrainers') 
     const bookedTrainerCollection = client.db('fitDB').collection('bookedTrainers')
+    const paymentCollection = client.db('fitDB').collection('payments')
 
     // jwt api
     app.post('/jwt', async(req,res)=>{
@@ -233,11 +235,11 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     })
 
   // trainers by time slot
-  app.get('/trainee/:times', async (req, res) => {
-    const availableTime = req.params.times;
+  app.get('/trainee/:email', async (req, res) => {
+    const email = req.params.email;
     
     
-    const query = { 'timeslot.times': availableTime };
+    const query = { email: email };
     
     try {
         const result = await confirmedTrainerCollection.findOne(query);
@@ -306,6 +308,34 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
       res.status(500).send({ message: 'Internal server error' });
     }
   });
+
+  // payment api
+  app.post('/create-payment-intent', async(req,res)=>{
+    const {price}=req.body;
+    const amount = parseInt(price * 100)
+    console.log(amount,'amount inside the intent')
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount:amount,
+      currency:'usd',
+      payment_method_types:['card']
+    });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret
+    })
+ 
+  })
+   app.post('/payments', async(req,res)=>{
+    const payment = req.body;
+    const paymentResult = await paymentCollection.insertOne(payment);
+    // delete each item from cart
+    console.log('payment info', payment)
+    const query = { slotId: payment.slotId };
+    const deleteResult = await bookedTrainerCollection.deleteOne(query)
+    res.send({paymentResult, deleteResult})
+
+
+  })
   
   
 
