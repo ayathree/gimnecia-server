@@ -330,9 +330,16 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     const paymentResult = await paymentCollection.insertOne(payment);
     // delete each item from cart
     console.log('payment info', payment)
-    const query = { slotId: payment.slotId };
-    const deleteResult = await bookedTrainerCollection.deleteOne(query)
-    res.send({paymentResult, deleteResult})
+    const filter = { statusBook: payment.statusBook};
+      const updateDoc = {
+        $set:{
+          statusBook: 'Booked'
+        }
+      }
+      const updateResult = await bookedTrainerCollection.updateOne(filter, updateDoc);
+    // const query = { slotId: payment.slotId };
+    // const deleteResult = await bookedTrainerCollection.deleteOne(query)
+    res.send({paymentResult, updateResult})
 
 
   })
