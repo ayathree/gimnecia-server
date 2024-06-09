@@ -235,7 +235,7 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
   res.send(result)
     })
 
-  // trainers by time slot
+  // trainers by email
   app.get('/trainee/:email', async (req, res) => {
     const email = req.params.email;
     
@@ -268,6 +268,13 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     const result = await bookedTrainerCollection.find(query).toArray();
     res.send(result) 
   })
+  // app.get('/booked/:id',   async(req,res)=>{
+  //   const id = req.params.id;
+  //   const query = {_id:new ObjectId(id)  };
+     
+  //   const result = await bookedTrainerCollection.findOne(query);
+  //   res.send(result) 
+  // })
   app.post('/booked', async(req,res)=>{
     const booked= req.body;
     // const query = {name: booked.name}
@@ -292,6 +299,12 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     const result = await bookedTrainerCollection.findOne(query)
     res.send(result)
   })
+  app.delete('/bookeee/:id',verifyToken, async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const result = await bookedTrainerCollection.deleteOne(query);
+    res.send(result)
+      })
   // member api
   app.get('/users/member/:email', verifyToken, async (req, res) => {
     try {
