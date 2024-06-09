@@ -142,6 +142,7 @@ async function run() {
     const result = await trainerCollection.insertOne(item)
     res.send(result)
   })
+  
   app.get('/trainers/:id',async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
@@ -254,6 +255,38 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
         res.status(500).send({ message: 'Internal server error' });
     }
 });
+app.put('/trainee/new/:email', async (req, res) => {
+  const email = req.params.email;
+
+  const query = { email: email };
+
+  try {
+      const result = await confirmedTrainerCollection.findOne(query);
+      if (result) {
+          // Update the existing document with new fields
+          const update = {
+              $set: {
+                  newslotName: req.body.newslotName,
+                  newslotTime: req.body.newslotTime,
+                  newdays: req.body.newdays
+              }
+          };
+
+          await confirmedTrainerCollection.updateOne(query, update);
+
+          // Fetch the updated document
+          const updatedResult = await confirmedTrainerCollection.findOne(query);
+
+          res.send(updatedResult);
+      } else {
+          res.status(404).send({ message: 'No trainer found with the specified email' });
+      }
+  } catch (error) {
+      console.error('Error finding trainer:', error);
+      res.status(500).send({ message: 'Internal server error' });
+  }
+});
+
 
   // bookedTrainer
   app.get('/booked',  async(req,res)=>{
@@ -286,12 +319,12 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     const result = await bookedTrainerCollection.insertOne(booked);
     res.send(result)
   })
-  app.get('/booked/:email', async (req, res) => {
-    const userEmail = req.params.email;
-    const query = { userEmail: userEmail };
+  app.get('/bookedUser/:email', async (req, res) => {
+    const userEmail = req.params.email; // Use `email` to match the route parameter
+    const query = { userEmail: userEmail }; // Ensure the query object has the correct field name
     const result = await bookedTrainerCollection.find(query).toArray(); 
     res.send(result);
-  });
+});
   // get booked details by id
   app.get('/bookeee/:id',async(req,res)=>{
     const id = req.params.id;
