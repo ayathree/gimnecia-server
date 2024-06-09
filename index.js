@@ -261,6 +261,13 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
     const result = await bookedTrainerCollection.find().toArray();
     res.send(result) 
   })
+  app.get('/booked/:name',   async(req,res)=>{
+    const userName = req.params.name;
+    const query = { name: userName  };
+     
+    const result = await bookedTrainerCollection.find(query).toArray();
+    res.send(result) 
+  })
   app.post('/booked', async(req,res)=>{
     const booked= req.body;
     // const query = {name: booked.name}
