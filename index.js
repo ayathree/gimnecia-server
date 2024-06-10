@@ -34,6 +34,8 @@ async function run() {
     const paymentCollection = client.db('fitDB').collection('payments')
     const newsLetterCollection = client.db('fitDB').collection('news')
     const feedbackCollection = client.db('fitDB').collection('feedback')
+    const reviewCollection = client.db('fitDB').collection('review')
+    const newClassCollection = client.db('fitDB').collection('newClass')
 
     // jwt api
     app.post('/jwt', async(req,res)=>{
@@ -150,6 +152,13 @@ async function run() {
     const result = await trainerCollection.findOne(query)
     res.send(result)
   })
+  app.get('/feedTrainers/:email',async(req,res)=>{
+    
+    const email = req.params.email;
+    const query = { email: email };
+    const result = await trainerCollection.findOne(query)
+    res.send(result)
+  })
   // confirmed trainer
   app.patch('/trainers/confirm/:id', async (req, res) => {
     const id = req.params.id;
@@ -232,6 +241,14 @@ app.post('/reject/:id', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+app.get('/reject/:email',  async(req,res)=>{
+  const email = req.params.email;
+  const query = { email: email };
+  const result = await feedbackCollection.findOne(query);
+  res.send(result)
+})
+
+
   // get confirmed trainer
   app.get('/confirmedTrainer',  async(req,res)=>{
     const result = await confirmedTrainerCollection.find().toArray();
@@ -485,6 +502,27 @@ app.put('/trainee/new/:email', async (req, res) => {
     res.send({
        newsUser,paymentUser, revenue
     })
+  })
+  // review
+  app.post('/review', async(req,res)=>{
+    const booked= req.body;
+   
+    
+    const result = await reviewCollection.insertOne(booked);
+    res.send(result)
+  })
+  // new class
+  app.post('/newClass', async(req,res)=>{
+    const newClass= req.body;
+   
+    
+    const result = await newClassCollection.insertOne(newClass);
+    res.send(result)
+  })
+  app.get('/newClass', async(req,res)=>{
+    
+    const result = await newClassCollection.find().toArray();
+    res.send(result)
   })
   
   
