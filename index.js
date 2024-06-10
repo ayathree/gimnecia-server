@@ -33,6 +33,7 @@ async function run() {
     const bookedTrainerCollection = client.db('fitDB').collection('bookedTrainers')
     const paymentCollection = client.db('fitDB').collection('payments')
     const newsLetterCollection = client.db('fitDB').collection('news')
+    const feedbackCollection = client.db('fitDB').collection('feedback')
 
     // jwt api
     app.post('/jwt', async(req,res)=>{
@@ -192,6 +193,44 @@ async function run() {
         console.error('Error confirming trainer:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
+});
+// feedback
+app.post('/reject/:id', async (req, res) => {
+  const id = req.params.id;
+  const feedback = req.body;
+
+  if (!ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid trainer ID' });
+  }
+
+  const query = { _id: new ObjectId(id) };
+
+  try {
+    // Insert rejected trainer into feedbackCollection with feedback and status
+    const insertResult = await feedbackCollection.insertOne(feedback);
+    console.log('insertResult:', insertResult);
+
+    if (insertResult.insertedCount === 0) {
+      return res.status(500).json({ message: 'Failed to insert feedback' });
+    }
+
+    // Delete trainer from trainerCollection
+    const deleteResult = await trainerCollection.deleteOne(query);
+    console.log('deleteResult:', deleteResult);
+
+    if (deleteResult.deletedCount === 0) {
+      return res.status(500).json({ message: 'Failed to delete trainer' });
+    }
+
+    res.json({
+      message: 'Trainer rejected and feedback recorded',
+      insertResult,
+      deleteResult
+    });
+  } catch (error) {
+    console.error('Error rejecting trainer:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 });
   // get confirmed trainer
   app.get('/confirmedTrainer',  async(req,res)=>{
