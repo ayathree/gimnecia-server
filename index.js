@@ -108,7 +108,7 @@ async function run() {
     });
     
     // admin
-    app.patch('/users/admin/:id', async (req,res)=>{
+    app.patch('/users/admin/:id',verifyToken,verifyAdmin, async (req,res)=>{
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)};
       const updateDoc = {
@@ -153,7 +153,7 @@ async function run() {
     res.send(result)
   })
   
-  app.get('/trainers/:id',async(req,res)=>{
+  app.get('/trainers/:id',verifyToken,async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
     const result = await trainerCollection.findOne(query)
@@ -167,7 +167,7 @@ async function run() {
     res.send(result)
   })
   // confirmed trainer
-  app.patch('/trainers/confirm/:id', async (req, res) => {
+  app.patch('/trainers/confirm/:id',verifyToken, async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
 
@@ -211,7 +211,7 @@ async function run() {
     }
 });
 // feedback
-app.post('/reject/:id', async (req, res) => {
+app.post('/reject/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const feedback = req.body;
 
@@ -248,7 +248,7 @@ app.post('/reject/:id', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-app.get('/reject/:email',  async(req,res)=>{
+app.get('/reject/:email', verifyToken,  async(req,res)=>{
   const email = req.params.email;
   const query = { email: email };
   const result = await feedbackCollection.findOne(query);
@@ -318,7 +318,7 @@ app.delete('/confirmedTrainer/:id',verifyToken, verifyAdmin, async(req,res)=>{
         res.status(500).send({ message: 'Internal server error' });
     }
 });
-app.put('/trainee/new/:email', async (req, res) => {
+app.put('/trainee/new/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
 
   const query = { email: email };
@@ -357,39 +357,34 @@ app.put('/trainee/new/:email', async (req, res) => {
     const result = await bookedTrainerCollection.find().toArray();
     res.send(result) 
   })
-  app.get('/booked/:name',   async(req,res)=>{
+  app.get('/booked/:name', verifyToken,  async(req,res)=>{
     const userName = req.params.name;
     const query = { name: userName  };
      
     const result = await bookedTrainerCollection.find(query).toArray();
     res.send(result) 
   })
-  // app.get('/booked/:id',   async(req,res)=>{
-  //   const id = req.params.id;
-  //   const query = {_id:new ObjectId(id)  };
-     
-  //   const result = await bookedTrainerCollection.findOne(query);
-  //   res.send(result) 
-  // })
+  
   app.post('/booked', async(req,res)=>{
     const booked= req.body;
-    // const query = {name: booked.name}
-    //   const existingUser = await bookedTrainerCollection.findOne(query);
-    //   if(existingUser){
-    //     return res.send({message: 'user already exist', insertedId: null})
-    //   }
+    
     
     const result = await bookedTrainerCollection.insertOne(booked);
     res.send(result)
   })
-  app.get('/bookedUser/:email', async (req, res) => {
-    const userEmail = req.params.email; // Use `email` to match the route parameter
-    const query = { userEmail: userEmail }; // Ensure the query object has the correct field name
+  app.get('/booked', async(req,res)=>{
+    
+    const result = await bookedTrainerCollection.find().toArray();
+    res.send(result)
+  })
+  app.get('/bookedUser/:email',verifyToken, async (req, res) => {
+    const userEmail = req.params.email; 
+    const query = { userEmail: userEmail }; 
     const result = await bookedTrainerCollection.find(query).toArray(); 
     res.send(result);
 });
   // get booked details by id
-  app.get('/bookeee/:id',async(req,res)=>{
+  app.get('/bookeee/:id',verifyToken,async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
     const result = await bookedTrainerCollection.findOne(query)
@@ -518,8 +513,13 @@ app.put('/trainee/new/:email', async (req, res) => {
     const result = await reviewCollection.insertOne(booked);
     res.send(result)
   })
+  app.get('/review', async(req,res)=>{
+    
+    const result = await reviewCollection.find().toArray();
+    res.send(result)
+  })
   // new class
-  app.post('/newClass', async(req,res)=>{
+  app.post('/newClass',verifyToken,verifyAdmin, async(req,res)=>{
     const newClass= req.body;
    
     
@@ -533,18 +533,64 @@ app.put('/trainee/new/:email', async (req, res) => {
   })
   
   // forum
-  app.post('/forum', async(req,res)=>{
-    const newClass= req.body;
-   
-    
+  app.post('/forum',verifyToken, async (req, res) => {
+    const newClass = req.body;
     const result = await forumCollection.insertOne(newClass);
-    res.send(result)
-  })
-  app.get('/forum', async(req,res)=>{
-    
+    res.send(result);
+});
+
+// Get all posts
+app.get('/forum', async (req, res) => {
     const result = await forumCollection.find().toArray();
-    res.send(result)
-  })
+    res.send(result);
+});
+
+// Upvote a post
+app.post('/forum/:id/upvote', async (req, res) => {
+    const postId = req.params.id;
+    try {
+        const result = await forumCollection.findOneAndUpdate(
+            { _id: new ObjectId(postId) },
+            { $inc: { upvotes: 1 } },
+            { returnDocument: 'after' }
+        );
+        if (!result.value) return res.status(404).json({ message: 'Post not found' });
+
+        res.json({ upvotes: result.value.upvotes, downvotes: result.value.downvotes });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Downvote a post
+app.post('/forum/:id/downvote', async (req, res) => {
+    const postId = req.params.id;
+    try {
+        const result = await forumCollection.findOneAndUpdate(
+            { _id: new ObjectId(postId) },
+            { $inc: { downvotes: 1 } },
+            { returnDocument: 'after' }
+        );
+        if (!result.value) return res.status(404).json({ message: 'Post not found' });
+
+        res.json({ upvotes: result.value.upvotes, downvotes: result.value.downvotes });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get the current votes for a post
+app.get('/forum/:id', async (req, res) => {
+    const postId = req.params.id;
+    try {
+        const post = await forumCollection.findOne({ _id: new ObjectId(postId) });
+        if (!post) return res.status(404).json({ message: 'Post not found' });
+
+        res.json({ upvotes: post.upvotes, downvotes: post.downvotes });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 
 
     // Connect the client to the server	(optional starting in v4.7)
