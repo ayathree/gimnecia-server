@@ -36,6 +36,7 @@ async function run() {
     const feedbackCollection = client.db('fitDB').collection('feedback')
     const reviewCollection = client.db('fitDB').collection('review')
     const newClassCollection = client.db('fitDB').collection('newClass')
+    const forumCollection = client.db('fitDB').collection('forum')
 
     // jwt api
     app.post('/jwt', async(req,res)=>{
@@ -79,6 +80,12 @@ async function run() {
     app.get('/users', verifyToken,verifyAdmin,  async(req,res)=>{
      
       const result = await userCollection.find().toArray();
+      res.send(result) 
+    })
+    app.get('/users/:email', verifyToken,  async(req,res)=>{
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.findOne(query);
       res.send(result) 
     })
 
@@ -525,8 +532,19 @@ app.put('/trainee/new/:email', async (req, res) => {
     res.send(result)
   })
   
-  
-
+  // forum
+  app.post('/forum', async(req,res)=>{
+    const newClass= req.body;
+   
+    
+    const result = await forumCollection.insertOne(newClass);
+    res.send(result)
+  })
+  app.get('/forum', async(req,res)=>{
+    
+    const result = await forumCollection.find().toArray();
+    res.send(result)
+  })
 
 
     // Connect the client to the server	(optional starting in v4.7)
