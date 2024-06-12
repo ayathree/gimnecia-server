@@ -1,10 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const app = express();
 require('dotenv').config()
 const stripe= require('stripe')(process.env.STRIPE_SECRET_KEY)
-const app = express();
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 app.use(cors());
@@ -153,7 +153,7 @@ async function run() {
     res.send(result)
   })
   
-  app.get('/trainers/:id',verifyToken,async(req,res)=>{
+  app.get('/trainers/:id',async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
     const result = await trainerCollection.findOne(query)
@@ -167,7 +167,7 @@ async function run() {
     res.send(result)
   })
   // confirmed trainer
-  app.patch('/trainers/confirm/:id',verifyToken, async (req, res) => {
+  app.patch('/trainers/confirm/:id',verifyToken,verifyAdmin, async (req, res) => {
     const id = req.params.id;
     const query = { _id: new ObjectId(id) };
 
@@ -377,14 +377,14 @@ app.put('/trainee/new/:email', verifyToken, async (req, res) => {
     const result = await bookedTrainerCollection.find().toArray();
     res.send(result)
   })
-  app.get('/bookedUser/:email',verifyToken, async (req, res) => {
+  app.get('/bookedUser/:email', async (req, res) => {
     const userEmail = req.params.email; 
     const query = { userEmail: userEmail }; 
     const result = await bookedTrainerCollection.find(query).toArray(); 
     res.send(result);
 });
   // get booked details by id
-  app.get('/bookeee/:id',verifyToken,async(req,res)=>{
+  app.get('/bookeee/:id',async(req,res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}
     const result = await bookedTrainerCollection.findOne(query)
