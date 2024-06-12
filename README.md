@@ -20,6 +20,7 @@ A website of a gym where total role is three : admin, trainer and member
 - admin can see the total balance or revenue of this website
 - admin can select a requested trainer to be a trainer and also can delete them or reject them
 - Rejected member can see the feedback of admin gave him for rejection
+- Have use react-select for time slot
 
 
 # Admin credentials
